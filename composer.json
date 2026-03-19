@@ -1,0 +1,34 @@
+{
+    "name": "npabisz/laravel-monitoring",
+    "description": "Centralized monitoring system for Laravel applications - collects metrics, tracks slow queries and requests",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "npabisz"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/database": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/queue": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/redis": "^9.0|^10.0|^11.0|^12.0"
+    },
+    "suggest": {
+        "laravel/slack-notification-channel": "Required for Slack notification channel (^3.0)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Npabisz\\LaravelMonitoring\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Npabisz\\LaravelMonitoring\\MonitoringServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}
