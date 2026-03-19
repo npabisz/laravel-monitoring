@@ -145,10 +145,10 @@ class MonitoringService
 
             foreach ($keys as $shortKey) {
                 $redisKey = $this->redisPrefix . $group . ':' . $shortKey;
-                $type = $redis->type($redisKey);
+                $type = (string) $redis->type($redisKey);
 
-                // phpredis returns int constants, predis returns strings
-                if ($type === 'list' || $type === 3) {
+                // Predis returns Status object (cast to 'list'), phpredis returns int (3)
+                if ($type === 'list' || $type === '3') {
                     $values = $redis->lrange($redisKey, 0, -1);
                     $data[$shortKey] = json_encode(array_map('floatval', $values));
                 } else {
