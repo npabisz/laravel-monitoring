@@ -131,6 +131,10 @@
             <div class="card"><div class="card-title">Disk Free</div><div class="card-value" id="diskFree">--</div></div>
         </div>
 
+        <!-- Custom Metrics -->
+        <div class="section-title" id="customTitle" style="display:none">Custom Metrics</div>
+        <div class="grid grid-4" id="customCards"></div>
+
         <!-- Charts -->
         <div class="section-title">Timeline</div>
         <div class="grid grid-2">
@@ -275,6 +279,59 @@
             setVal('redisOps', s.redis_ops_per_sec !== null ? fmtNum(s.redis_ops_per_sec) : 'N/A', 'cyan');
             setVal('redisHitRate', s.redis_hit_rate !== null ? 'hit rate: ' + s.redis_hit_rate + '%' : '');
             setVal('diskFree', s.disk_free_gb !== null ? s.disk_free_gb + ' GB' : 'N/A', s.disk_free_gb < 2 ? 'red' : s.disk_free_gb < 5 ? 'yellow' : 'green');
+
+            // Custom metrics
+            renderCustomMetrics(s.custom);
+        }
+
+        function renderCustomMetrics(custom) {
+            const container = document.getElementById('customCards');
+            const title = document.getElementById('customTitle');
+
+            if (!custom || Object.keys(custom).length === 0) {
+                container.innerHTML = '';
+                title.style.display = 'none';
+                return;
+            }
+
+            title.style.display = '';
+            container.innerHTML = Object.entries(custom).map(([key, value]) => {
+                const label = formatMetricLabel(key);
+                const formatted = formatMetricValue(key, value);
+                const color = getMetricColor(key, value);
+                return `<div class="card"><div class="card-title">${escHtml(label)}</div><div class="card-value ${color}">${formatted}</div></div>`;
+            }).join('');
+        }
+
+        function formatMetricLabel(key) {
+            return key
+                .replace(/_/g, ' ')
+                .replace(/\b(ms|mb|gb)\b/gi, m => m.toUpperCase())
+                .replace(/\b(avg|max|p95|api)\b/gi, m => m.toUpperCase())
+                .replace(/^\w/, c => c.toUpperCase());
+        }
+
+        function formatMetricValue(key, value) {
+            if (value === null || value === undefined) return 'N/A';
+            if (typeof value === 'string') return value;
+            if (key.includes('_ms')) return fmtMs(value);
+            if (key.includes('_mb')) return value + ' MB';
+            if (key.includes('_gb')) return value + ' GB';
+            if (key.includes('_rate')) return (value * 100).toFixed(1) + '%';
+            return fmtNum(value);
+        }
+
+        function getMetricColor(key, value) {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'string') {
+                if (value === 'running') return 'green';
+                if (value === 'inactive' || value === 'unknown') return 'red';
+                return '';
+            }
+            if (key.includes('error') && value > 0) return 'red';
+            if (key.includes('_rate_limit') && value > 0) return 'yellow';
+            if (key.includes('_status')) return '';
+            return '';
         }
 
         function updateCharts(timeline) {

@@ -64,7 +64,7 @@ class DashboardController extends Controller
                 'cpu_load'            => $latest->cpu_load_1m,
                 'memory_mb'           => $latest->memory_usage_mb,
                 'disk_free_gb'        => $latest->disk_free_gb,
-                'custom'              => $latest->custom,
+                'custom'              => $this->aggregateCustomMetrics($metrics),
             ],
             'timeline' => $metrics->map(fn ($m) => [
                 'time'             => $m->recorded_at->format('H:i'),
@@ -82,6 +82,36 @@ class DashboardController extends Controller
                 'redis_ops'        => $m->redis_ops_per_sec,
             ])->values(),
         ]);
+    }
+
+    /**
+     * Aggregate custom metrics across all samples.
+     * Keys ending in _avg_ms, _hit_rate, _status, _load are averaged/taken from latest.
+     * Everything else is summed.
+     */
+    protected function aggregateCustomMetrics($metrics): array
+    {
+        $all = $metrics->pluck('custom')->filter()->values();
+
+        if ($all->isEmpty()) {
+            return [];
+        }
+
+        $allKeys = $all->flatMap(fn ($c) => array_keys($c))->unique()->values();
+        $latest = $all->last();
+        $result = [];
+
+        foreach ($allKeys as $key) {
+            // Snapshot metrics — use latest value
+            if (preg_match('/(avg_ms|max_ms|p95_|hit_rate|_status|_load|_count|_size_mb|_free_gb|_memory_mb|_clients|_ops_per_sec|active_)/', $key)) {
+                $result[$key] = $latest[$key] ?? null;
+            } else {
+                // Counter metrics — sum across all samples
+                $result[$key] = $all->sum(fn ($c) => $c[$key] ?? 0);
+            }
+        }
+
+        return $result;
     }
 
     public function apiSlowLogs(Request $request): JsonResponse
