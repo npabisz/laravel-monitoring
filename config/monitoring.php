@@ -135,6 +135,23 @@ return [
 
         /*
         |----------------------------------------------------------------------
+        | Gauge Patterns
+        |----------------------------------------------------------------------
+        | Custom metric keys matching these patterns are treated as gauges
+        | (use latest value) instead of counters (summed) in summary cards.
+        |
+        | Built-in patterns already handle: *_avg_ms, *_max_ms, *_p95_*,
+        | *_hit_rate, *_status, *_load, *_count, *_size_mb, *_free_gb,
+        | *_memory_mb, *_clients, *_ops_per_sec, active_*
+        |
+        | Add your own patterns here for app-specific gauge metrics.
+        */
+        'gauge_patterns' => [
+            // '_percent', '_mbps', 'tcp_',
+        ],
+
+        /*
+        |----------------------------------------------------------------------
         | Custom Timeline Charts
         |----------------------------------------------------------------------
         | Define how custom metrics are grouped into charts.
@@ -154,11 +171,20 @@ return [
         |
         | Available colors: blue, red, green, yellow, purple, cyan, orange, pink
         |
+        | Chart type (optional):
+        |   'type' => 'line'  — line chart (good for gauges: CPU %, memory, throughput)
+        |   'type' => 'bar'   — bar chart (default, good for counters: requests, errors)
+        |
         | Example:
         |   [
         |       'label'  => 'Checkout',
         |       'keys'   => ['checkout_requests', 'checkout_errors', 'checkout_avg_duration_ms'],
         |       'colors' => ['checkout_errors' => 'red', 'checkout_*' => 'blue'],
+        |   ],
+        |   [
+        |       'label'  => 'CPU & Memory',
+        |       'keys'   => ['cpu_usage_percent', 'memory_usage_percent'],
+        |       'type'   => 'line',
         |   ],
         |   [
         |       'label'  => 'Google API',

@@ -101,7 +101,7 @@ class DashboardController extends Controller
 
     /**
      * Aggregate custom metrics across all samples.
-     * Keys ending in _avg_ms, _hit_rate, _status, _load are averaged/taken from latest.
+     * Keys matching gauge patterns use latest value.
      * Everything else is summed.
      */
     protected function aggregateCustomMetrics($metrics): array
@@ -116,17 +116,33 @@ class DashboardController extends Controller
         $latest = $all->last();
         $result = [];
 
+        $gaugePattern = $this->buildGaugePattern();
+
         foreach ($allKeys as $key) {
-            // Snapshot metrics — use latest value
-            if (preg_match('/(avg_ms|max_ms|p95_|hit_rate|_status|_load|_count|_size_mb|_free_gb|_memory_mb|_clients|_ops_per_sec|active_)/', $key)) {
+            if (preg_match($gaugePattern, $key)) {
                 $result[$key] = $latest[$key] ?? null;
             } else {
-                // Counter metrics — sum across all samples
                 $result[$key] = $all->sum(fn ($c) => $c[$key] ?? 0);
             }
         }
 
         return $result;
+    }
+
+    protected function buildGaugePattern(): string
+    {
+        $builtIn = [
+            'avg_ms', 'max_ms', 'p95_', 'hit_rate', '_status', '_load',
+            '_count', '_size_mb', '_free_gb', '_memory_mb', '_clients',
+            '_ops_per_sec', 'active_',
+        ];
+
+        $custom = config('monitoring.dashboard.gauge_patterns', []);
+        $all = array_merge($builtIn, $custom);
+
+        $escaped = array_map(fn ($p) => preg_quote($p, '/'), $all);
+
+        return '/(' . implode('|', $escaped) . ')/';
     }
 
     public function apiSlowLogs(Request $request): JsonResponse

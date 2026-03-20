@@ -480,9 +480,10 @@
 
             groups.forEach(group => {
                 let colorIndex = 0;
+                const isLineChart = group.type === 'line';
                 const datasets = group.keys.map((key) => {
                     const label = formatMetricLabel(key.replace('c:', ''));
-                    const isRate = key.includes('avg') || key.includes('_ms') || key.includes('_rate');
+                    const isRate = isLineChart || key.includes('avg') || key.includes('_ms') || key.includes('_rate');
                     const c = getCustomMetricColor(key, colorIndex++, group.colors);
                     return {
                         label,
@@ -491,7 +492,7 @@
                         borderColor: c.border,
                         borderWidth: isRate ? 2 : 0,
                         type: isRate ? 'line' : 'bar',
-                        fill: isRate,
+                        fill: isRate && !isLineChart,
                         tension: 0.3,
                         pointRadius: 0,
                         pointHoverRadius: 4,
@@ -500,7 +501,7 @@
 
                 const opts = chartOptsMultiLegend();
                 charts[group.id] = new Chart(document.getElementById(group.id), {
-                    type: 'bar',
+                    type: isLineChart ? 'line' : 'bar',
                     data: { labels, datasets },
                     options: opts,
                 });
@@ -524,6 +525,7 @@
                         label: cfg.label || 'Custom ' + (i + 1),
                         keys: matched,
                         colors: cfg.colors || null,
+                        type: cfg.type || null,
                     });
                 }
             });
