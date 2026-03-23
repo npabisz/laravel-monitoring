@@ -1,14 +1,14 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Commands;
+namespace Npabisz\LaravelMetrics\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
-use Npabisz\LaravelMonitoring\Models\MonitoringMetric;
-use Npabisz\LaravelMonitoring\Models\MonitoringSlowLog;
-use Npabisz\LaravelMonitoring\Notifications\MonitoringAlertNotifiable;
-use Npabisz\LaravelMonitoring\Notifications\MonitoringAlertNotification;
+use Npabisz\LaravelMetrics\Models\MonitoringMetric;
+use Npabisz\LaravelMetrics\Models\MonitoringSlowLog;
+use Npabisz\LaravelMetrics\Notifications\MonitoringAlertNotifiable;
+use Npabisz\LaravelMetrics\Notifications\MonitoringAlertNotification;
 
 class MonitoringAlertCommand extends Command
 {

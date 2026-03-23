@@ -1,8 +1,8 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Collectors;
+namespace Npabisz\LaravelMetrics\Collectors;
 
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 
 class DatabaseCollector implements CollectorInterface
 {

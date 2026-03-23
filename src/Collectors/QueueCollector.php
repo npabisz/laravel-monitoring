@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Collectors;
+namespace Npabisz\LaravelMetrics\Collectors;
 
 use Illuminate\Support\Facades\Redis;
 
@@ -27,7 +27,7 @@ class QueueCollector implements CollectorInterface
         }
 
         // Jobs processed/failed from Redis counters
-        $service = app(\Npabisz\LaravelMonitoring\Services\MonitoringService::class);
+        $service = app(\Npabisz\LaravelMetrics\Services\MonitoringService::class);
         $data = $service->flushRedisCounters('queue');
 
         $metrics['queue_jobs_processed'] = (int) ($data['jobs_processed'] ?? 0);

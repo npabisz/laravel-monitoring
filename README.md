@@ -11,7 +11,7 @@ Centralized monitoring package for Laravel applications. Collects metrics every 
 ## Installation
 
 ```bash
-composer require npabisz/laravel-monitoring
+composer require npabisz/laravel-metrics
 ```
 
 Publish config and migrations:
@@ -341,7 +341,7 @@ Implement `CollectorInterface` and add to config:
 
 namespace App\Monitoring\Collectors;
 
-use Npabisz\LaravelMonitoring\Collectors\CollectorInterface;
+use Npabisz\LaravelMetrics\Collectors\CollectorInterface;
 
 class MyCustomCollector implements CollectorInterface
 {
@@ -372,7 +372,7 @@ class MyCustomCollector implements CollectorInterface
 Use `MonitoringService` to push real-time metrics from anywhere in your application. These are aggregated by collectors on the next `monitoring:collect` run.
 
 ```php
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 
 $monitoring = app(MonitoringService::class);
 
@@ -410,7 +410,7 @@ In addition to scheduled notifications, you can register a callback for real-tim
 
 ```php
 // In a service provider
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 
 MonitoringService::onAlert(function (string $alert, $value, $threshold) {
     Log::warning("Monitoring alert: {$alert}", [

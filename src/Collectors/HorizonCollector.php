@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Collectors;
+namespace Npabisz\LaravelMetrics\Collectors;
 
 class HorizonCollector implements CollectorInterface
 {

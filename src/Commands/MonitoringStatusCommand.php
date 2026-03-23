@@ -1,10 +1,10 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Commands;
+namespace Npabisz\LaravelMetrics\Commands;
 
 use Illuminate\Console\Command;
-use Npabisz\LaravelMonitoring\Models\MonitoringMetric;
-use Npabisz\LaravelMonitoring\Models\MonitoringSlowLog;
+use Npabisz\LaravelMetrics\Models\MonitoringMetric;
+use Npabisz\LaravelMetrics\Models\MonitoringSlowLog;
 
 class MonitoringStatusCommand extends Command
 {

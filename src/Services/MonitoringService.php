@@ -1,11 +1,11 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Services;
+namespace Npabisz\LaravelMetrics\Services;
 
 use Illuminate\Support\Facades\Redis;
-use Npabisz\LaravelMonitoring\Collectors\CollectorInterface;
-use Npabisz\LaravelMonitoring\Models\MonitoringMetric;
-use Npabisz\LaravelMonitoring\Models\MonitoringSlowLog;
+use Npabisz\LaravelMetrics\Collectors\CollectorInterface;
+use Npabisz\LaravelMetrics\Models\MonitoringMetric;
+use Npabisz\LaravelMetrics\Models\MonitoringSlowLog;
 
 class MonitoringService
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Notifications;
+namespace Npabisz\LaravelMetrics\Notifications;
 
 use Illuminate\Notifications\Notifiable;
 

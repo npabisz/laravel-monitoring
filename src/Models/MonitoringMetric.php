@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Models;
+namespace Npabisz\LaravelMetrics\Models;
 
 use Illuminate\Database\Eloquent\Model;
 

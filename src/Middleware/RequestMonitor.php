@@ -1,10 +1,10 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Middleware;
+namespace Npabisz\LaravelMetrics\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 use Symfony\Component\HttpFoundation\Response;
 
 class RequestMonitor

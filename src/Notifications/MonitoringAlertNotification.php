@@ -1,12 +1,12 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Notifications;
+namespace Npabisz\LaravelMetrics\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Npabisz\LaravelMonitoring\Notifications\Channels\DiscordChannel;
-use Npabisz\LaravelMonitoring\Notifications\Channels\GoogleChatChannel;
+use Npabisz\LaravelMetrics\Notifications\Channels\DiscordChannel;
+use Npabisz\LaravelMetrics\Notifications\Channels\GoogleChatChannel;
 
 class MonitoringAlertNotification extends Notification
 {

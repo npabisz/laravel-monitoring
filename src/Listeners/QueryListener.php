@@ -1,9 +1,9 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Listeners;
+namespace Npabisz\LaravelMetrics\Listeners;
 
 use Illuminate\Database\Events\QueryExecuted;
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 
 class QueryListener
 {

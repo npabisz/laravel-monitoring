@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Http\Middleware;
+namespace Npabisz\LaravelMetrics\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

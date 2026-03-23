@@ -1,9 +1,9 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Commands;
+namespace Npabisz\LaravelMetrics\Commands;
 
 use Illuminate\Console\Command;
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 
 class MonitoringCleanCommand extends Command
 {

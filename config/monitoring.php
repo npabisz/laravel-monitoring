@@ -68,16 +68,16 @@ return [
     | Metrics Collectors
     |--------------------------------------------------------------------------
     | List of collector classes that gather metrics on each collection run.
-    | Each must implement Npabisz\LaravelMonitoring\Collectors\CollectorInterface.
+    | Each must implement Npabisz\LaravelMetrics\Collectors\CollectorInterface.
     | You can add your own custom collectors here.
     */
     'collectors' => [
-        Npabisz\LaravelMonitoring\Collectors\HttpCollector::class,
-        Npabisz\LaravelMonitoring\Collectors\QueueCollector::class,
-        Npabisz\LaravelMonitoring\Collectors\DatabaseCollector::class,
-        Npabisz\LaravelMonitoring\Collectors\RedisCollector::class,
-        Npabisz\LaravelMonitoring\Collectors\SystemCollector::class,
-        // Npabisz\LaravelMonitoring\Collectors\HorizonCollector::class,
+        Npabisz\LaravelMetrics\Collectors\HttpCollector::class,
+        Npabisz\LaravelMetrics\Collectors\QueueCollector::class,
+        Npabisz\LaravelMetrics\Collectors\DatabaseCollector::class,
+        Npabisz\LaravelMetrics\Collectors\RedisCollector::class,
+        Npabisz\LaravelMetrics\Collectors\SystemCollector::class,
+        // Npabisz\LaravelMetrics\Collectors\HorizonCollector::class,
     ],
 
     /*

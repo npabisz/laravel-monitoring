@@ -1,5 +1,5 @@
 {
-    "name": "npabisz/laravel-monitoring",
+    "name": "npabisz/laravel-metrics",
     "description": "Centralized monitoring system for Laravel applications - collects metrics, tracks slow queries and requests",
     "type": "library",
     "license": "MIT",
@@ -20,13 +20,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Npabisz\\LaravelMonitoring\\": "src/"
+            "Npabisz\\LaravelMetrics\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Npabisz\\LaravelMonitoring\\MonitoringServiceProvider"
+                "Npabisz\\LaravelMetrics\\MonitoringServiceProvider"
             ]
         }
     },

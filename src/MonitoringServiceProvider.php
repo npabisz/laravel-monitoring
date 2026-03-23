@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring;
+namespace Npabisz\LaravelMetrics;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Events\QueryExecuted;
@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Npabisz\LaravelMonitoring\Commands\MonitoringAlertCommand;
-use Npabisz\LaravelMonitoring\Commands\MonitoringCleanCommand;
-use Npabisz\LaravelMonitoring\Commands\MonitoringCollectCommand;
-use Npabisz\LaravelMonitoring\Commands\MonitoringStatusCommand;
-use Npabisz\LaravelMonitoring\Listeners\QueryListener;
-use Npabisz\LaravelMonitoring\Middleware\RequestMonitor;
-use Npabisz\LaravelMonitoring\Services\MonitoringService;
+use Npabisz\LaravelMetrics\Commands\MonitoringAlertCommand;
+use Npabisz\LaravelMetrics\Commands\MonitoringCleanCommand;
+use Npabisz\LaravelMetrics\Commands\MonitoringCollectCommand;
+use Npabisz\LaravelMetrics\Commands\MonitoringStatusCommand;
+use Npabisz\LaravelMetrics\Listeners\QueryListener;
+use Npabisz\LaravelMetrics\Middleware\RequestMonitor;
+use Npabisz\LaravelMetrics\Services\MonitoringService;
 
 class MonitoringServiceProvider extends ServiceProvider
 {

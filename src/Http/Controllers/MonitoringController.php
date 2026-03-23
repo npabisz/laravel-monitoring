@@ -1,12 +1,12 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Http\Controllers;
+namespace Npabisz\LaravelMetrics\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Npabisz\LaravelMonitoring\Models\MonitoringMetric;
-use Npabisz\LaravelMonitoring\Models\MonitoringSlowLog;
+use Npabisz\LaravelMetrics\Models\MonitoringMetric;
+use Npabisz\LaravelMetrics\Models\MonitoringSlowLog;
 
 class MonitoringController extends Controller
 {

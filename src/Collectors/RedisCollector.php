@@ -1,6 +1,6 @@
 <?php
 
-namespace Npabisz\LaravelMonitoring\Collectors;
+namespace Npabisz\LaravelMetrics\Collectors;
 
 use Illuminate\Support\Facades\Redis;
 

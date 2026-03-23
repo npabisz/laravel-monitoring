@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Npabisz\LaravelMonitoring\Http\Controllers\DashboardController;
-use Npabisz\LaravelMonitoring\Http\Middleware\AuthorizeMonitoring;
+use Npabisz\LaravelMetrics\Http\Controllers\DashboardController;
+use Npabisz\LaravelMetrics\Http\Middleware\AuthorizeMonitoring;
 
 Route::middleware(AuthorizeMonitoring::class)->group(function () {
     Route::get('/', [DashboardController::class, 'index']);
