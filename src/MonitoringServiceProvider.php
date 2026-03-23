@@ -87,7 +87,15 @@ class MonitoringServiceProvider extends ServiceProvider
             if ($this->app->runningInConsole()) {
                 $schedule = $this->app->make(Schedule::class);
                 $schedule->command('monitoring:collect')->everyMinute();
-                $schedule->command('monitoring:alert')->everyFifteenMinutes();
+                $alertInterval = (int) config('monitoring.notifications.interval', 1);
+                match (true) {
+                    $alertInterval <= 1  => $schedule->command('monitoring:alert')->everyMinute(),
+                    $alertInterval <= 5  => $schedule->command('monitoring:alert')->everyFiveMinutes(),
+                    $alertInterval <= 10 => $schedule->command('monitoring:alert')->everyTenMinutes(),
+                    $alertInterval <= 15 => $schedule->command('monitoring:alert')->everyFifteenMinutes(),
+                    $alertInterval <= 30 => $schedule->command('monitoring:alert')->everyThirtyMinutes(),
+                    default              => $schedule->command('monitoring:alert')->hourly(),
+                };
                 $schedule->command('monitoring:clean')->dailyAt('04:00');
             }
         });

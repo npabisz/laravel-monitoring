@@ -3,6 +3,7 @@
 namespace Npabisz\LaravelMonitoring\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Npabisz\LaravelMonitoring\Models\MonitoringMetric;
 use Npabisz\LaravelMonitoring\Models\MonitoringSlowLog;
@@ -31,7 +32,8 @@ class MonitoringAlertCommand extends Command
             return self::SUCCESS;
         }
 
-        $since = now()->subMinutes(15);
+        $interval = (int) ($notificationsConfig['interval'] ?? 1);
+        $since = now()->subMinutes(max($interval, 1));
         $metrics = MonitoringMetric::where('recorded_at', '>=', $since)->get();
 
         if ($metrics->isEmpty()) {
@@ -52,6 +54,30 @@ class MonitoringAlertCommand extends Command
             return self::SUCCESS;
         }
 
+        // Filter out alerts still in cooldown (per-alert or global default)
+        $defaultCooldown = (int) ($notificationsConfig['cooldown'] ?? 60);
+        $alerts = array_values(array_filter($alerts, function ($alert) use ($defaultCooldown) {
+            $cooldown = $alert['cooldown'] ?? $defaultCooldown;
+
+            if ($cooldown <= 0) {
+                return true;
+            }
+
+            $cacheKey = 'monitoring:alert_cooldown:' . $alert['key'];
+
+            if (Cache::has($cacheKey)) {
+                $this->info("  [{$alert['key']}] skipped (cooldown active)");
+                return false;
+            }
+
+            return true;
+        }));
+
+        if (empty($alerts)) {
+            $this->info('All triggered alerts are in cooldown.');
+            return self::SUCCESS;
+        }
+
         $this->warn(count($alerts) . ' alert(s) triggered:');
 
         foreach ($alerts as $alert) {
@@ -63,6 +89,15 @@ class MonitoringAlertCommand extends Command
             $notifiable = new MonitoringAlertNotifiable();
             $notifiable->notify(new MonitoringAlertNotification($alerts, $summary));
             $this->info('Alert notification sent.');
+
+            // Set cooldown for each fired alert
+            foreach ($alerts as $alert) {
+                $cooldown = $alert['cooldown'] ?? $defaultCooldown;
+
+                if ($cooldown > 0) {
+                    Cache::put('monitoring:alert_cooldown:' . $alert['key'], true, now()->addMinutes($cooldown));
+                }
+            }
         } catch (\Throwable $e) {
             $this->error('Failed to send notification: ' . $e->getMessage());
         }
@@ -220,14 +255,20 @@ class MonitoringAlertCommand extends Command
             };
 
             if ($triggered) {
-                $alerts[] = [
-                    'key'      => $rule['key'],
-                    'severity' => $rule['severity'] ?? 'warning',
-                    'label'    => $rule['label'] ?? $rule['key'],
-                    'message'  => $value . ' ' . $operator . ' ' . $rule['threshold'],
-                    'value'    => $value,
+                $alert = [
+                    'key'       => $rule['key'],
+                    'severity'  => $rule['severity'] ?? 'warning',
+                    'label'     => $rule['label'] ?? $rule['key'],
+                    'message'   => $value . ' ' . $operator . ' ' . $rule['threshold'],
+                    'value'     => $value,
                     'threshold' => $rule['threshold'],
                 ];
+
+                if (isset($rule['cooldown'])) {
+                    $alert['cooldown'] = (int) $rule['cooldown'];
+                }
+
+                $alerts[] = $alert;
             }
         }
 

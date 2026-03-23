@@ -92,6 +92,18 @@
         .page-btn:disabled { opacity: 0.3; cursor: default; }
         .page-btn.active { color: var(--blue); border-color: var(--blue); }
         .page-info { font-size: 11px; color: var(--text-muted); }
+        /* Ranked list section */
+        .ranked-list { list-style: none; padding: 0; margin: 0; }
+        .ranked-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .ranked-list li:last-child { border-bottom: none; }
+        .ranked-list .rank { font-weight: 700; color: var(--text-muted); min-width: 28px; }
+        .ranked-list .rank-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 12px; }
+        .ranked-list .rank-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .ranked-list li:nth-child(1) .rank { color: var(--red); }
+        .ranked-list li:nth-child(2) .rank { color: var(--yellow); }
+        .ranked-list li:nth-child(3) .rank { color: var(--green); }
+        .ranked-list .no-data-row { color: var(--text-muted); justify-content: center; }
+
         @media (max-width: 768px) {
             .grid-4 { grid-template-columns: repeat(2, 1fr); }
             .grid-2 { grid-template-columns: 1fr; }
@@ -256,6 +268,7 @@
                 switch (section.type) {
                     case 'built-in':         return buildBuiltInSection(section, sectionId);
                     case 'cards':            return buildCardsSection(section, sectionId);
+                    case 'list':             return buildListSection(section, sectionId);
                     case 'chart':            return buildChartSection(section, sectionId);
                     case 'slow-logs':        return buildSlowLogsSection(sectionId);
                     case 'all-custom-cards': return buildAllCustomCardsSection(sectionId);
@@ -315,6 +328,16 @@
         function buildCardsSection(section, sectionId) {
             const label = section.label ? `<div class="section-title">${escHtml(section.label)}</div>` : '';
             return `${label}<div class="grid grid-4 custom-cards" id="cards_${sectionId}" data-keys='${escAttr(JSON.stringify(section.keys || []))}'></div>`;
+        }
+
+        function buildListSection(section, sectionId) {
+            const label = section.label ? `<div class="section-title">${escHtml(section.label)}</div>` : '';
+            return `${label}<div class="card ranked-list-card" id="list_${sectionId}"
+                data-label-keys='${escAttr(JSON.stringify(section.label_keys || []))}'
+                data-value-keys='${escAttr(JSON.stringify(section.value_keys || []))}'
+                data-max='${section.max || 5}'>
+                <ul class="ranked-list"><li class="no-data-row">No data</li></ul>
+            </div>`;
         }
 
         function buildAllCustomCardsSection(sectionId) {
@@ -428,6 +451,7 @@
             updateBuiltInCards(data.summary);
             updateBuiltInCharts(data.timeline);
             updateCustomCards(data.summary.custom);
+            updateListSections(data.summary.custom);
             updateAllCustomCards(data.summary.custom);
             updateCustomCharts(data.timeline);
         }
@@ -546,6 +570,41 @@
 
             if (!canvas) return;
             charts[chartKey] = new Chart(canvas, { type: 'bar', data: { labels, datasets: ds }, options });
+        }
+
+        // ─── Ranked list sections ─────────────────────────────
+        function updateListSections(custom) {
+            if (!custom) return;
+            document.querySelectorAll('.ranked-list-card').forEach(container => {
+                const labelKeys = JSON.parse(container.dataset.labelKeys || '[]');
+                const valueKeys = JSON.parse(container.dataset.valueKeys || '[]');
+                const max = parseInt(container.dataset.max) || 5;
+
+                const matchedLabels = Object.keys(custom).filter(k => labelKeys.some(p => matchesPattern(k, p))).sort();
+                const matchedValues = Object.keys(custom).filter(k => valueKeys.some(p => matchesPattern(k, p))).sort();
+
+                const items = [];
+                const count = Math.min(matchedLabels.length, matchedValues.length, max);
+
+                for (let i = 0; i < count; i++) {
+                    const label = custom[matchedLabels[i]];
+                    const value = custom[matchedValues[i]];
+                    if (label && value !== undefined && value !== null) {
+                        items.push({ label, value });
+                    }
+                }
+
+                const ul = container.querySelector('.ranked-list');
+                if (items.length === 0) {
+                    ul.innerHTML = '<li class="no-data-row">No data</li>';
+                    return;
+                }
+
+                ul.innerHTML = items.map((item, i) => {
+                    const formatted = typeof item.value === 'number' ? item.value.toLocaleString() : item.value;
+                    return `<li><span class="rank">#${i + 1}</span><span class="rank-label">${escHtml(String(item.label))}</span><span class="rank-value">${formatted}</span></li>`;
+                }).join('');
+            });
         }
 
         // ─── Custom cards (pattern-matched) ──────────────────

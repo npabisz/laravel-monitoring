@@ -147,6 +147,8 @@ return [
         |   'built-in'  — renders built-in card group: 'http', 'queue',
         |                  'database', 'system' (all four if 'id' omitted)
         |   'cards'     — summary cards for matching custom metric keys
+        |   'list'      — ranked list pairing label_keys with value_keys
+        |                  (e.g. top N domains by count)
         |   'chart'     — a chart panel for matching custom metric keys
         |   'slow-logs' — the slow logs table with filters and pagination
         |
@@ -223,6 +225,12 @@ return [
     */
     'notifications' => [
         'enabled'  => env('MONITORING_NOTIFICATIONS_ENABLED', false),
+
+        // How often to run alert checks (minutes). Lookback window matches this value.
+        'interval' => env('MONITORING_ALERT_INTERVAL', 1),
+
+        // Cooldown per alert key (minutes). After firing, same alert won't re-fire until cooldown expires.
+        'cooldown' => env('MONITORING_ALERT_COOLDOWN', 60),
 
         // Custom app name for notifications. If null, uses app.name + environment.
         'app_name' => env('MONITORING_APP_NAME'),
