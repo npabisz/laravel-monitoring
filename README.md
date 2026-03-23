@@ -57,34 +57,34 @@ All settings are in `config/metrics.php`. Key environment variables:
 
 ```env
 # Core
-MONITORING_ENABLED=true
-MONITORING_SLOW_QUERY_MS=100
-MONITORING_TRACK_QUERIES=true
-MONITORING_TRACK_REQUESTS=true
+METRICS_ENABLED=true
+METRICS_SLOW_QUERY_MS=100
+METRICS_TRACK_QUERIES=true
+METRICS_TRACK_REQUESTS=true
 
 # Dashboard (web UI, IP-protected)
-MONITORING_DASHBOARD_ENABLED=true
-MONITORING_DASHBOARD_PATH=metrics
-MONITORING_ALLOWED_IPS=123.45.67.89,98.76.54.32
+METRICS_DASHBOARD_ENABLED=true
+METRICS_DASHBOARD_PATH=metrics
+METRICS_ALLOWED_IPS=123.45.67.89,98.76.54.32
 
 # JSON API (bearer token auth)
-MONITORING_ROUTES_ENABLED=false
-MONITORING_API_TOKEN=your-secret-token
+METRICS_ROUTES_ENABLED=false
+METRICS_API_TOKEN=your-secret-token
 
 # Redis
-MONITORING_REDIS_PREFIX=monitoring:
-MONITORING_REDIS_CONNECTION=default
+METRICS_REDIS_PREFIX=monitoring:
+METRICS_REDIS_CONNECTION=default
 
 # Retention
-MONITORING_RETENTION_METRICS=30
-MONITORING_RETENTION_SLOW_LOGS=14
+METRICS_RETENTION_METRICS=30
+METRICS_RETENTION_SLOW_LOGS=14
 
 # Database (optional separate connection)
-MONITORING_DB_CONNECTION=null
+METRICS_DB_CONNECTION=null
 
 # Alerts
-MONITORING_ALERT_INTERVAL=1          # minutes between alert checks
-MONITORING_ALERT_COOLDOWN=60         # default cooldown per alert (minutes)
+METRICS_ALERT_INTERVAL=1          # minutes between alert checks
+METRICS_ALERT_COOLDOWN=60         # default cooldown per alert (minutes)
 ```
 
 ### Slow Request Thresholds
@@ -125,7 +125,7 @@ Strategies: `sum` (default), `avg` (weighted), `max`, `latest`. Unmatched keys a
 
 ## Dashboard
 
-Available at `/{path}` (default: `/metrics`). Protected by the `viewMonitoring` gate.
+Available at `/{path}` (default: `/metrics`). Protected by the `viewMetrics` gate.
 
 **Features:**
 - Summary cards — HTTP requests, response times, error rate, queue depth, DB queries, Redis stats, CPU, disk
@@ -144,16 +144,16 @@ Available at `/{path}` (default: `/metrics`). Protected by the `viewMonitoring` 
 
 ### Authorization
 
-The dashboard uses a `viewMonitoring` gate with IP-based authorization (similar to Laravel Horizon):
+The dashboard uses a `viewMetrics` gate with IP-based authorization (similar to Laravel Horizon):
 
 - **Local environment** — all access allowed
-- **Production** — only IPs listed in `MONITORING_ALLOWED_IPS` are allowed
+- **Production** — only IPs listed in `METRICS_ALLOWED_IPS` are allowed
 - Denied access is logged
 
 To customize the gate, override it in a service provider:
 
 ```php
-Gate::define('viewMonitoring', function ($user = null) {
+Gate::define('viewMetrics', function ($user = null) {
     // your custom logic
 });
 ```
@@ -232,7 +232,7 @@ The same metric key can appear in multiple views. Tabs persist across page refre
 
 ## JSON API
 
-Enable with `MONITORING_ROUTES_ENABLED=true`. Protected by bearer token (`Authorization: Bearer <token>`).
+Enable with `METRICS_ROUTES_ENABLED=true`. Protected by bearer token (`Authorization: Bearer <token>`).
 
 ```bash
 # Summary (last N minutes)
@@ -277,28 +277,28 @@ Scheduled alert notifications at a configurable interval (default: every minute)
 
 | Channel | Config Key | Env Variable | Format |
 |---------|-----------|-------------|--------|
-| Mail | `notifications.mail.to` | `MONITORING_NOTIFICATION_MAIL_TO` | HTML email with "Open Dashboard" button |
-| Slack | `notifications.slack.webhook_url` | `MONITORING_NOTIFICATION_SLACK_URL` | Slack message with markdown formatting |
-| Discord | `notifications.discord.webhook_url` | `MONITORING_NOTIFICATION_DISCORD_URL` | Rich embed with color, fields, timestamp |
-| Google Chat | `notifications.google_chat.webhook_url` | `MONITORING_NOTIFICATION_GOOGLE_CHAT_URL` | Text message with emoji and dashboard link |
+| Mail | `notifications.mail.to` | `METRICS_NOTIFICATION_MAIL_TO` | HTML email with "Open Dashboard" button |
+| Slack | `notifications.slack.webhook_url` | `METRICS_NOTIFICATION_SLACK_URL` | Slack message with markdown formatting |
+| Discord | `notifications.discord.webhook_url` | `METRICS_NOTIFICATION_DISCORD_URL` | Rich embed with color, fields, timestamp |
+| Google Chat | `notifications.google_chat.webhook_url` | `METRICS_NOTIFICATION_GOOGLE_CHAT_URL` | Text message with emoji and dashboard link |
 
 Multiple channels can be used simultaneously.
 
 ### Configuration
 
 ```env
-MONITORING_NOTIFICATIONS_ENABLED=true
-MONITORING_ALERT_INTERVAL=1              # check every N minutes
-MONITORING_ALERT_COOLDOWN=60             # default cooldown per alert (minutes)
+METRICS_NOTIFICATIONS_ENABLED=true
+METRICS_ALERT_INTERVAL=1              # check every N minutes
+METRICS_ALERT_COOLDOWN=60             # default cooldown per alert (minutes)
 
 # Comma-separated channel list
-MONITORING_NOTIFICATION_CHANNELS=discord,google_chat
+METRICS_NOTIFICATION_CHANNELS=discord,google_chat
 
 # Channel-specific webhook URLs
-MONITORING_NOTIFICATION_DISCORD_URL=https://discord.com/api/webhooks/...
-MONITORING_NOTIFICATION_GOOGLE_CHAT_URL=https://chat.googleapis.com/v1/spaces/.../messages?key=...&token=...
-MONITORING_NOTIFICATION_SLACK_URL=https://hooks.slack.com/services/...
-MONITORING_NOTIFICATION_MAIL_TO=admin@example.com,ops@example.com
+METRICS_NOTIFICATION_DISCORD_URL=https://discord.com/api/webhooks/...
+METRICS_NOTIFICATION_GOOGLE_CHAT_URL=https://chat.googleapis.com/v1/spaces/.../messages?key=...&token=...
+METRICS_NOTIFICATION_SLACK_URL=https://hooks.slack.com/services/...
+METRICS_NOTIFICATION_MAIL_TO=admin@example.com,ops@example.com
 ```
 
 ### Notification Thresholds
@@ -307,15 +307,15 @@ Thresholds are evaluated against aggregated data from the configured interval:
 
 | Threshold | Env Variable | Default | Triggers When |
 |-----------|-------------|---------|---------------|
-| 5xx error rate | `MONITORING_NOTIFY_ERROR_RATE` | 0.05 (5%) | Error rate exceeds percentage |
-| Queue depth | `MONITORING_NOTIFY_QUEUE_DEPTH` | 100 | Total pending jobs exceed count |
-| Failed jobs | `MONITORING_NOTIFY_FAILED_JOBS` | 10 | Failed jobs exceed count |
-| Avg response | `MONITORING_NOTIFY_AVG_RESPONSE` | 2000ms | Average response time exceeds threshold |
-| Max response | `MONITORING_NOTIFY_MAX_RESPONSE` | 10000ms | Max response time exceeds threshold |
-| CPU load | `MONITORING_NOTIFY_CPU` | 5.0 | 1-minute load average exceeds threshold |
-| Disk free | `MONITORING_NOTIFY_DISK_GB` | 2.0 GB | Free disk space drops below threshold |
-| Redis memory | `MONITORING_NOTIFY_REDIS_MB` | 500 MB | Redis memory usage exceeds threshold |
-| Slow queries | `MONITORING_NOTIFY_SLOW_QUERIES` | 50 | Slow queries exceed count |
+| 5xx error rate | `METRICS_NOTIFY_ERROR_RATE` | 0.05 (5%) | Error rate exceeds percentage |
+| Queue depth | `METRICS_NOTIFY_QUEUE_DEPTH` | 100 | Total pending jobs exceed count |
+| Failed jobs | `METRICS_NOTIFY_FAILED_JOBS` | 10 | Failed jobs exceed count |
+| Avg response | `METRICS_NOTIFY_AVG_RESPONSE` | 2000ms | Average response time exceeds threshold |
+| Max response | `METRICS_NOTIFY_MAX_RESPONSE` | 10000ms | Max response time exceeds threshold |
+| CPU load | `METRICS_NOTIFY_CPU` | 5.0 | 1-minute load average exceeds threshold |
+| Disk free | `METRICS_NOTIFY_DISK_GB` | 2.0 GB | Free disk space drops below threshold |
+| Redis memory | `METRICS_NOTIFY_REDIS_MB` | 500 MB | Redis memory usage exceeds threshold |
+| Slow queries | `METRICS_NOTIFY_SLOW_QUERIES` | 50 | Slow queries exceed count |
 
 ### Custom Thresholds
 
@@ -465,7 +465,7 @@ One row per hour. Pre-aggregated from `metrics` by the `monitoring:aggregate-hou
 
 One row per slow query or slow request. Stores SQL/URL, duration, user_id, context. Auto-cleaned after 14 days (configurable).
 
-All tables support a separate database connection via `MONITORING_DB_CONNECTION`.
+All tables support a separate database connection via `METRICS_DB_CONNECTION`.
 
 ## Multi-Resolution Data
 
