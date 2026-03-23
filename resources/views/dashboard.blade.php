@@ -387,6 +387,7 @@
                         data-gauge='${section.gauge ? "1" : "0"}'
                         data-format='${escAttr(JSON.stringify(section.format || null))}'
                         data-labels='${escAttr(JSON.stringify(section.labels || null))}'
+                        data-labels-from='${escAttr(JSON.stringify(section.labels_from || null))}'
                     ></canvas></div></div>`;
         }
 
@@ -484,7 +485,7 @@
             updateCustomCards(data.summary.custom);
             updateListSections(data.summary.custom);
             updateAllCustomCards(data.summary.custom);
-            updateCustomCharts(data.timeline);
+            updateCustomCharts(data.timeline, data.summary.custom);
         }
 
         function fetchSlowLogs() {
@@ -728,7 +729,7 @@
         }
 
         // ─── Custom charts ───────────────────────────────────
-        function updateCustomCharts(timeline) {
+        function updateCustomCharts(timeline, custom) {
             if (!timeline || timeline.length === 0) return;
             const labels = timeline.map(d => d.time);
 
@@ -739,6 +740,7 @@
                 const chartType = canvas.dataset.chartType || 'bar';
                 const format = JSON.parse(canvas.dataset.format || 'null');
                 const customLabels = JSON.parse(canvas.dataset.labels || 'null');
+                const labelsFrom = JSON.parse(canvas.dataset.labelsFrom || 'null');
                 const isLineChart = chartType === 'line';
 
                 const allTimelineKeys = {};
@@ -753,7 +755,13 @@
                 let colorIndex = 0;
                 const datasets = matchedKeys.map((key, i) => {
                     const cleanKey = key.replace('c:', '');
-                    const label = (customLabels && customLabels[cleanKey]) || (customLabels && customLabels[i]) || formatMetricLabel(cleanKey);
+                    // Resolve label: labels_from (dynamic from custom summary) > labels (static) > auto-format
+                    let label;
+                    if (labelsFrom && labelsFrom[cleanKey] && custom && custom[labelsFrom[cleanKey]]) {
+                        label = custom[labelsFrom[cleanKey]];
+                    } else {
+                        label = (customLabels && customLabels[cleanKey]) || (customLabels && customLabels[i]) || formatMetricLabel(cleanKey);
+                    }
                     const isRate = isLineChart || key.includes('avg') || key.includes('_ms') || key.includes('_rate');
                     const c = getCustomMetricColor(key, colorIndex++, colors);
                     return {
@@ -819,7 +827,7 @@
                 if (typeof colorMap === 'object' && !Array.isArray(colorMap)) {
                     if (colorMap[clean]) return resolveColor(colorMap[clean]) || COLORS.blue;
                     for (const [pattern, color] of Object.entries(colorMap)) {
-                        if (pattern.endsWith('*') && clean.startsWith(pattern.slice(0, -1))) {
+                        if (pattern.includes('*') && matchesPattern(clean, pattern)) {
                             return resolveColor(color) || COLORS.blue;
                         }
                     }
@@ -833,8 +841,9 @@
         }
 
         function matchesPattern(key, pattern) {
-            if (pattern.endsWith('*')) return key.startsWith(pattern.slice(0, -1));
-            return key === pattern;
+            if (!pattern.includes('*')) return key === pattern;
+            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+            return regex.test(key);
         }
 
         function fmtNum(n) { if (n === null || n === undefined) return 'N/A'; if (n >= 1e6) return (n/1e6).toFixed(1)+'M'; if (n >= 1e3) return (n/1e3).toFixed(1)+'K'; return Number.isInteger(n) ? n.toString() : parseFloat(n.toFixed(2)).toString(); }
