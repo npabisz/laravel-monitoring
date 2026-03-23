@@ -223,7 +223,7 @@
         };
 
         // ─── Config & State ───────────────────────────────────
-        const basePath = '{{ rtrim(config("monitoring.dashboard.path", "monitoring"), "/") }}';
+        const basePath = '{{ rtrim(config("metrics.dashboard.path", "metrics"), "/") }}';
         const viewsConfig = @json($views ?? []);
         const metricConfigs = @json($metricConfigs ?? []);
         let refreshTimer = null;
