@@ -359,7 +359,7 @@
 
         function buildCardsSection(section, sectionId) {
             const label = section.label ? `<div class="section-title">${escHtml(section.label)}</div>` : '';
-            return `${label}<div class="grid grid-4 custom-cards" id="cards_${sectionId}" data-keys='${escAttr(JSON.stringify(section.keys || []))}'></div>`;
+            return `${label}<div class="grid grid-4 custom-cards" id="cards_${sectionId}" data-keys='${escAttr(JSON.stringify(section.keys || []))}' data-value-colors='${escAttr(JSON.stringify(section.value_colors || null))}'></div>`;
         }
 
         function buildListSection(section, sectionId) {
@@ -698,15 +698,38 @@
             if (!custom) return;
             document.querySelectorAll('.custom-cards').forEach(container => {
                 const patterns = JSON.parse(container.dataset.keys || '[]');
-                const matchedKeys = Object.keys(custom).filter(k => patterns.some(p => matchesPattern(k, p)));
+                const valueColors = JSON.parse(container.dataset.valueColors || 'null');
+                const matchedKeys = Object.keys(custom).filter(k => patterns.some(p => matchesPattern(k, p)) && custom[k] !== null);
                 if (matchedKeys.length === 0) { container.innerHTML = ''; return; }
                 container.innerHTML = matchedKeys.map(key => {
                     const label = formatMetricLabel(key);
                     const formatted = formatMetricValue(key, custom[key]);
-                    const color = getMetricColor(key, custom[key]);
+                    const color = resolveValueColor(key, custom[key], valueColors) || getMetricColor(key, custom[key]);
                     return `<div class="card"><div class="card-title">${escHtml(label)}</div><div class="card-value ${color}">${formatted}</div></div>`;
                 }).join('');
             });
+        }
+
+        function resolveValueColor(key, value, rules) {
+            if (!rules || value === null || value === undefined || typeof value !== 'number') return '';
+            // Find rules matching this key
+            for (const rule of rules) {
+                const pattern = rule.key || '*';
+                if (pattern !== '*' && !matchesPattern(key, pattern)) continue;
+                const conditions = rule.conditions || [];
+                for (const cond of conditions) {
+                    const op = cond.op || '>';
+                    const threshold = cond.value;
+                    const matched = op === '<' ? value < threshold
+                        : op === '<=' ? value <= threshold
+                        : op === '>' ? value > threshold
+                        : op === '>=' ? value >= threshold
+                        : op === '==' ? value === threshold
+                        : false;
+                    if (matched) return cond.color || '';
+                }
+            }
+            return '';
         }
 
         // ─── All custom cards (default view fallback) ─────────
@@ -884,7 +907,13 @@
             }
             return null;
         }
-        function getMetricColor(key, value) { if (value === null || value === undefined) return ''; if (typeof value === 'string') { if (value === 'running') return 'green'; if (value === 'inactive' || value === 'unknown') return 'red'; return ''; } if (key.includes('error') && value > 0) return 'red'; if (key.includes('rate_limit') && value > 0) return 'yellow'; return ''; }
+        function getMetricColor(key, value) {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'string') { if (value === 'running') return 'green'; if (value === 'inactive' || value === 'unknown') return 'red'; return ''; }
+            if (key.includes('error') && value > 0) return 'red';
+            if (key.includes('rate_limit') && value > 0) return 'yellow';
+            return '';
+        }
 
         // ─── Init ───────────────────────────────────────────────
         initDashboard();

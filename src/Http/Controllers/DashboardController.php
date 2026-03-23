@@ -181,9 +181,10 @@ class DashboardController extends Controller
     protected function buildGaugePattern(): string
     {
         $builtIn = [
-            'avg_ms', 'max_ms', 'p95_', 'hit_rate', '_status', '_load',
-            '_count', '_size_mb', '_total_mb', '_free_gb', '_memory_mb', '_clients',
-            '_ops_per_sec', 'active_', '_percent', '_mbps',
+            '_avg_', 'avg_ms', '_max_', 'max_ms', 'p95_', 'p99_', 'hit_rate',
+            '_status', '_load', '_count', '_size_mb', '_total_mb', '_free_gb',
+            '_memory_mb', '_limit_mb', '_clients', '_ops_per_sec', 'active_',
+            '_percent', '_mbps', '_domain',
         ];
 
         $escaped = array_map(fn ($p) => preg_quote($p, '/'), $builtIn);
