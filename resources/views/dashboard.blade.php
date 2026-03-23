@@ -171,7 +171,7 @@
         const SAFE_COLORS = [COLORS.blue, COLORS.green, COLORS.yellow, COLORS.purple, COLORS.cyan, COLORS.orange, COLORS.pink];
         const ERROR_PATTERN = /error|5xx|fail|slow|max|high|timeout/i;
 
-        const chartOpts = (yLabel = '') => ({
+        const chartOpts = (yLabel = '', format = null) => ({
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
@@ -189,20 +189,31 @@
                         label: function(ctx) {
                             let v = ctx.parsed.y;
                             if (v === null || v === undefined) return ctx.dataset.label + ': N/A';
-                            v = Number.isInteger(v) ? v : parseFloat(v.toFixed(2));
-                            return ctx.dataset.label + ': ' + v.toLocaleString();
+                            const decimals = format?.decimals ?? (Number.isInteger(v) ? 0 : 2);
+                            v = parseFloat(v.toFixed(decimals));
+                            const suffix = format?.suffix ?? autoSuffix(ctx.dataset.rawKey || '');
+                            return ctx.dataset.label + ': ' + v.toLocaleString() + suffix;
                         }
                     },
                 },
             },
             scales: {
                 x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 20 } },
-                y: { beginAtZero: true, grid: { color: 'rgba(51,65,85,0.5)' }, title: yLabel ? { display: true, text: yLabel, color: '#94a3b8' } : { display: false }, ticks: { callback: v => Number.isInteger(v) ? v : parseFloat(v.toFixed(2)) } },
+                y: { beginAtZero: true, grid: { color: 'rgba(51,65,85,0.5)' }, title: yLabel ? { display: true, text: yLabel, color: '#94a3b8' } : { display: false }, ticks: { callback: function(v) { const s = format?.suffix ?? ''; return (Number.isInteger(v) ? v : parseFloat(v.toFixed(2))) + s; } } },
             },
         });
 
-        const chartOptsMultiLegend = (yLabel = '') => {
-            const opts = chartOpts(yLabel);
+        function autoSuffix(key) {
+            if (key.endsWith('_ms') || key.includes('avg_ms') || key.includes('max_ms') || key.includes('p95_')) return ' ms';
+            if (key.endsWith('_mb') || key.includes('memory_mb')) return ' MB';
+            if (key.endsWith('_gb')) return ' GB';
+            if (key.endsWith('_percent') || key.endsWith('_rate')) return '%';
+            if (key.includes('mbps')) return ' Mbps';
+            return '';
+        }
+
+        const chartOptsMultiLegend = (yLabel = '', format = null) => {
+            const opts = chartOpts(yLabel, format);
             opts.plugins.legend = { display: true, position: 'top', align: 'start' };
             return opts;
         };
@@ -374,6 +385,8 @@
                         data-colors='${escAttr(JSON.stringify(section.colors || null))}'
                         data-chart-type='${section.chart_type || "bar"}'
                         data-gauge='${section.gauge ? "1" : "0"}'
+                        data-format='${escAttr(JSON.stringify(section.format || null))}'
+                        data-labels='${escAttr(JSON.stringify(section.labels || null))}'
                     ></canvas></div></div>`;
         }
 
@@ -560,9 +573,63 @@
             });
         }
 
+        // ─── Crosshair sync across all charts ─────────────────
+        let syncingCrosshair = false;
+        const crosshairPlugin = {
+            id: 'crosshairSync',
+            afterEvent(chart, args) {
+                const evt = args.event;
+                if (evt.type === 'mouseout') {
+                    chart._crosshairIndex = null;
+                    chart.update('none');
+                    if (!syncingCrosshair) {
+                        syncingCrosshair = true;
+                        Object.values(charts).forEach(c => {
+                            if (c !== chart) { c._crosshairIndex = null; c.update('none'); }
+                        });
+                        syncingCrosshair = false;
+                    }
+                    return;
+                }
+                if (evt.type !== 'mousemove') return;
+                const elements = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+                const idx = elements.length > 0 ? elements[0].index : null;
+                if (idx === chart._crosshairIndex) return;
+                chart._crosshairIndex = idx;
+                chart.update('none');
+                if (!syncingCrosshair) {
+                    syncingCrosshair = true;
+                    Object.values(charts).forEach(c => {
+                        if (c !== chart) { c._crosshairIndex = idx; c.update('none'); }
+                    });
+                    syncingCrosshair = false;
+                }
+            },
+            afterDraw(chart) {
+                const idx = chart._crosshairIndex;
+                if (idx == null) return;
+                const meta = chart.getDatasetMeta(0);
+                if (!meta || !meta.data[idx]) return;
+                const x = meta.data[idx].x;
+                const { top, bottom } = chart.chartArea;
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.beginPath();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+                ctx.lineWidth = 1;
+                ctx.moveTo(x, top);
+                ctx.lineTo(x, bottom);
+                ctx.stroke();
+                ctx.restore();
+            },
+        };
+        Chart.register(crosshairPlugin);
+
         function renderChart(chartKey, canvas, labels, datasets, options) {
             const ds = datasets.map(d => ({
                 label: d.label,
+                rawKey: d.rawKey,
                 data: d.data,
                 backgroundColor: d.bg || d.backgroundColor || COLORS.blue.bg,
                 borderColor: d.border || d.borderColor || COLORS.blue.border,
@@ -670,6 +737,8 @@
                 const patterns = JSON.parse(canvas.dataset.keys || '[]');
                 const colors = JSON.parse(canvas.dataset.colors || 'null');
                 const chartType = canvas.dataset.chartType || 'bar';
+                const format = JSON.parse(canvas.dataset.format || 'null');
+                const customLabels = JSON.parse(canvas.dataset.labels || 'null');
                 const isLineChart = chartType === 'line';
 
                 const allTimelineKeys = {};
@@ -682,12 +751,14 @@
                 if (matchedKeys.length === 0) return;
 
                 let colorIndex = 0;
-                const datasets = matchedKeys.map(key => {
-                    const label = formatMetricLabel(key.replace('c:', ''));
+                const datasets = matchedKeys.map((key, i) => {
+                    const cleanKey = key.replace('c:', '');
+                    const label = (customLabels && customLabels[cleanKey]) || (customLabels && customLabels[i]) || formatMetricLabel(cleanKey);
                     const isRate = isLineChart || key.includes('avg') || key.includes('_ms') || key.includes('_rate');
                     const c = getCustomMetricColor(key, colorIndex++, colors);
                     return {
                         label,
+                        rawKey: cleanKey,
                         data: timeline.map(d => d[key] || 0),
                         bg: c.bg,
                         border: c.border,
@@ -705,7 +776,7 @@
                     delete charts[chartKey];
                 }
 
-                renderChart(chartKey, canvas, labels, datasets, chartOptsMultiLegend());
+                renderChart(chartKey, canvas, labels, datasets, chartOptsMultiLegend('', format));
             });
         }
 
@@ -772,7 +843,14 @@
         function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
         function statusBadge(code) { const cls = code >= 500 ? 'badge-slow' : code >= 400 ? 'badge-request' : 'badge-ok'; return `<span class="badge ${cls}">${code}</span>`; }
-        function formatMetricLabel(key) { return key.replace(/_/g, ' ').replace(/\b(ms|mb|gb)\b/gi, m => m.toUpperCase()).replace(/\b(avg|max|p95|api)\b/gi, m => m.toUpperCase()).replace(/^\w/, c => c.toUpperCase()); }
+        function formatMetricLabel(key) {
+            let label = key
+                .replace(/_percent$/, '').replace(/_ms$/, '').replace(/_mb$/, '').replace(/_gb$/, '').replace(/_mbps$/, '')
+                .replace(/_/g, ' ').trim();
+            const abbr = { cpu: 'CPU', api: 'API', avg: 'Avg', max: 'Max', min: 'Min', p95: 'P95', p99: 'P99', db: 'DB', http: 'HTTP', tcp: 'TCP', ip: 'IP', id: 'ID', url: 'URL', rx: 'RX', tx: 'TX', ops: 'Ops', mb: 'MB', gb: 'GB', ms: 'ms' };
+            label = label.replace(/\b\w+/g, w => abbr[w.toLowerCase()] || w);
+            return label.charAt(0).toUpperCase() + label.slice(1);
+        }
         function formatMetricValue(key, value) {
             if (value === null || value === undefined) return 'N/A';
             if (typeof value === 'string') return value;
